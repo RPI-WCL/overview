@@ -1,0 +1,4 @@
+entity WWCTransportService is wwc.messaging.WWCTransportService {
+        when start send (salsa.language.Message arg0, salsa.language.ActorReference arg1)
+                -> communication(arg0.getSourceName(), arg0.getTargetName());
+}

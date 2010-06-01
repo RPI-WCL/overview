@@ -1,0 +1,16 @@
+entity UniversalActorState is salsa.language.UniversalActor$State {
+	when start putMessageInMailbox(salsa.language.Message arg0)
+		-> communication(arg0.getSourceName(), arg0.getTargetName());
+
+	when start addClassName(java.lang.String arg0)
+		-> creation(this.getRefStr(), this.getUAL().getHostAndPort());
+
+	when start migrate(salsa.naming.UAL arg0)
+		-> migration(this.getRefStr(), arg0.getHostAndPort());
+
+	when start die()
+		-> deletion(this.getRefStr());
+
+	when start destroy()
+		-> deletion(this.getRefStr());
+}

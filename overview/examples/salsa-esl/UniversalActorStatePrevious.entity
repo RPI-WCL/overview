@@ -1,0 +1,4 @@
+entity UniversalActorState is salsa.language.UniversalActor$State {
+	when start putMessageInMailbox(salsa.language.Message arg0)
+		-> communication(arg0.getSourceName(), arg0.getTargetName());
+}

@@ -1,0 +1,308 @@
+options {
+  JAVA_UNICODE_ESCAPE = true;
+  NODE_SCOPE_HOOK = true;
+  NODE_FACTORY = true;
+  NODE_PACKAGE = "org.eclipse.overview.instrumenter.compiler";
+}
+
+PARSER_BEGIN(OverviewParser)
+package org.eclipse.overview.instrumenter.compiler;
+
+public class OverviewParser {
+	public static void main(String args[]) {
+		OverviewParser parser;
+		if (args.length == 0) {
+			System.out.println("Overview Parser:  Reading from standard input . . .");
+			parser = new OverviewParser(System.in);
+		} else if (args.length == 1) {
+			System.out.println("Overview Parser:  Reading from file " + args[0] + " . . .");
+			try {
+				parser = new OverviewParser(new java.io.FileInputStream(args[0]));
+			} catch (java.io.FileNotFoundException e) {
+				System.out.println("Overview Parser:  File " + args[0] + " not found.");
+				return;
+			}
+		} else {
+			System.out.println("Overview Parser:  Usage is one of:");
+			System.out.println("         java OverviewParser < inputfile");
+			System.out.println("OR");
+			System.out.println("         java OverviewParser inputfile");
+			return;
+		}
+
+		try {
+			SimpleNode n = parser.CompilationUnit();
+			n.dump("");
+			System.out.println("Overview Parser:  Overview program parsed successfully.");
+		} catch (ParseException e) {
+			System.out.println(e.getMessage());
+			System.out.println("Overview Parser Version:  Encountered errors during parse.");
+		}
+	}
+
+	/* must add the line:  
+		nodeTable.current.addToken(token);
+	to the method jj_consume_token before the return statement */
+
+        static NodeTable nodeTable = new NodeTable();
+        
+        static void jjtreeOpenNodeScope(Node n) {
+                nodeTable = new NodeTable(nodeTable);
+                nodeTable.current = (SimpleNode)n;
+        }
+                        
+        static void jjtreeCloseNodeScope(Node n) {
+                nodeTable = nodeTable.parent;  
+        }
+}
+
+PARSER_END(OverviewParser)
+
+
+/* WHITE SPACE */
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+| "\f"
+}
+
+/* COMMENTS */
+MORE :
+{
+  "//" : IN_SINGLE_LINE_COMMENT
+|
+  <"/**" ~["/"]> { input_stream.backup(1); } : IN_FORMAL_COMMENT
+|
+  "/*" : IN_MULTI_LINE_COMMENT
+
+}
+<IN_SINGLE_LINE_COMMENT>
+SPECIAL_TOKEN :
+{
+  <SINGLE_LINE_COMMENT: "\n" | "\r" | "\r\n" > : DEFAULT
+}
+
+<IN_FORMAL_COMMENT>
+SPECIAL_TOKEN :
+{
+  <FORMAL_COMMENT: "*/" > : DEFAULT
+}
+
+<IN_MULTI_LINE_COMMENT>
+SPECIAL_TOKEN :
+{
+  <MULTI_LINE_COMMENT: "*/" > : DEFAULT
+}
+
+<IN_SINGLE_LINE_COMMENT,IN_FORMAL_COMMENT,IN_MULTI_LINE_COMMENT>
+MORE :
+{
+  < ~[] >
+}
+
+/* RESERVED WORDS AND LITERALS */
+TOKEN :
+{
+  < ENTITY: "entity" >
+| < IS: "is" >
+| < ON: "on" >
+| < PARAMETER: "parameter" >
+| < BY: "by" >
+| < UNIQUE: "unique" >
+| < CONTAINS: "contains" >
+| < WATCH: "watch" >
+| < WHEN: "when" >
+| < START: "start" >
+| < FINISH: "finish" >
+| < SEND: "->" >
+| < THIS: "this" >
+| < EXCEPTION: "exception" >
+}
+
+/* LITERALS */
+TOKEN : {
+          < INTEGER_LITERAL:  
+                  <DECIMAL_LITERAL> (["l","L"])?
+                | <HEX_LITERAL> (["l","L"])?
+                | <OCTAL_LITERAL> (["l","L"])?
+          >
+        | < #DECIMAL_LITERAL: ["1"-"9"] (["0"-"9"])* >
+        | < #HEX_LITERAL: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+ >
+        | < #OCTAL_LITERAL: "0" (["0"-"7"])* >
+        | < FLOATING_POINT_LITERAL:
+                  (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+                | "." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+                | (["0"-"9"])+ <EXPONENT> (["f","F","d","D"])?
+                | (["0"-"9"])+ (<EXPONENT>)? ["f","F","d","D"]
+          >
+        | < #EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+ >
+        | < CHARACTER_LITERAL:
+                "'"
+                (   (~["'","\\","\n","\r"])
+                        | ("\\"
+                                ( ["n","t","b","r","f","\\","'","\""]
+                                | ["0"-"7"] ( ["0"-"7"] )?
+                | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+                            )
+                          )
+                )
+                "'"
+          >
+        | < STRING_LITERAL:
+                "\""
+                (   (~["\"","\\","\n","\r"])  
+                        | ("\\"
+                                ( ["n","t","b","r","f","\\","'","\""]
+                                | ["0"-"7"] ( ["0"-"7"] )?
+                                | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+                                )
+                          )
+                )*
+                "\""
+          >
+}
+
+
+/* IDENTIFIERS */
+TOKEN :
+{
+  < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>)* >
+|
+  < #LETTER:
+      [
+       "\u0024",
+       "\u0041"-"\u005a",
+       "\u005f",
+       "\u0061"-"\u007a",
+       "\u00c0"-"\u00d6",
+       "\u00d8"-"\u00f6",
+       "\u00f8"-"\u00ff",
+       "\u0100"-"\u1fff",
+       "\u3040"-"\u318f",
+       "\u3300"-"\u337f",
+       "\u3400"-"\u3d2d",
+       "\u4e00"-"\u9fff",
+       "\uf900"-"\ufaff"
+      ]
+  >
+|
+  < #DIGIT:
+      [
+       "\u0030"-"\u0039",
+       "\u0660"-"\u0669",
+       "\u06f0"-"\u06f9",
+       "\u0966"-"\u096f",
+       "\u09e6"-"\u09ef",
+       "\u0a66"-"\u0a6f",
+       "\u0ae6"-"\u0aef",
+       "\u0b66"-"\u0b6f",
+       "\u0be7"-"\u0bef",
+       "\u0c66"-"\u0c6f",
+       "\u0ce6"-"\u0cef",
+       "\u0d66"-"\u0d6f",
+       "\u0e50"-"\u0e59",
+       "\u0ed0"-"\u0ed9",
+       "\u1040"-"\u1049"
+      ]
+  >
+}
+
+/* SEPARATORS */
+TOKEN :
+{
+  < LPAREN: "(" >
+| < RPAREN: ")" >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+| < LBRACKET: "[" >
+| < RBRACKET: "]" >
+| < SEMICOLON: ";" >
+| < COMMA: "," >
+| < DOT: "." >
+}
+
+/*********************************************
+ * THE OVERVIEW LANGUAGE GRAMMAR STARTS HERE *
+ *********************************************/
+
+/*
+ * Program structuring syntax follows.
+ */
+
+SimpleNode CompilationUnit() : {} {
+	( EntityDeclaration() )
+	<EOF>
+	{ return (SimpleNode) jjtThis; }
+}
+
+void EntityDeclaration() : {} {
+	"entity" <IDENTIFIER> "is" Name() EntityBody()
+}
+
+void EntityBody() : {} {
+	"{"
+	( WatchDeclaration() | WhenDeclaration() )*
+	"}"
+}
+
+void WatchDeclaration() : {} {
+	"watch" <IDENTIFIER> "is" Value() ";"
+}
+
+void WhenDeclaration() : {} {
+	"when" ("start"|"finish") MethodDeclaration() "->" EventDeclaration() ";"
+}
+
+void MethodDeclaration() : {} {
+	<IDENTIFIER> "(" [ Parameter() ( "," Parameter() )* ] ")"
+}
+
+void Parameter() : {} {
+	Name() <IDENTIFIER>
+}
+
+void Name() : {} {
+	<IDENTIFIER> ( "." <IDENTIFIER> )* [ "[" "]" ]
+}
+
+void EventDeclaration() : {} {
+	<IDENTIFIER> "(" [ Value() ( "," Value() )* ] ")"
+}
+
+void Value() : {} {
+	Literal()
+	| "exception"
+	| "this" ( "." ValuePart() )*
+	| ValuePart() ( "." ValuePart() )*
+}
+
+void ValuePart() : {} {
+	<IDENTIFIER> [ "(" [ Value() ( "," Value() )* ] ")" ]
+}
+
+void Literal() : {} {
+	  StringLiteral()
+	| CharacterLiteral()
+	| FloatingPointLiteral()
+	| IntegerLiteral()
+}
+
+void StringLiteral() : {} {
+	<STRING_LITERAL>
+}
+
+void CharacterLiteral() : {} {
+	<CHARACTER_LITERAL>
+}
+
+void FloatingPointLiteral() : {} {
+	<FLOATING_POINT_LITERAL>
+}
+
+void IntegerLiteral() : {} {
+	<INTEGER_LITERAL>
+}
+

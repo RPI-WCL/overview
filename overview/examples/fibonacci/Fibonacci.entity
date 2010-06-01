@@ -1,0 +1,7 @@
+entity Fibonacci is overview.examples.fibonacci.Fibonacci {
+	when start make (java.lang.String arg0, java.lang.String arg1)
+		-> creation (arg0, arg1);
+
+	when start talk (java.lang.String arg0, java.lang.String arg1)
+		-> communication (arg0, arg1);
+}

@@ -1,0 +1,19 @@
+entity Spew is overview.examples.spew.Spew {
+	when start test (java.lang.String arg0, java.lang.String arg1)
+		-> creation (arg0, arg1);
+
+	when start talk (java.lang.String arg0, java.lang.String arg1)
+		-> communication (arg0, arg1);
+
+	when start move (java.lang.String arg0, java.lang.String arg1)
+		-> migration (arg0, arg1);
+
+	when start kill (java.lang.String arg0)
+		-> deletion (arg0);
+
+	when start splt (java.lang.String arg0, java.lang.String arg1, java.lang.String arg2)
+		-> split (arg0, arg1, arg2);
+
+	when start mrge (java.lang.String arg0, java.lang.String arg1)
+		-> merge (arg0, arg1);
+}

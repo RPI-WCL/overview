@@ -1,0 +1,68 @@
+#!/bin/bash
+
+#    The OverView compiler is used to compile OverView. Never would've
+# guessed, eh? It's easy enough to use. Simply type ./compile in this
+# directory, and everything will be magically compiled for you, assuming I
+# wrote everything properly. If I didn't and you're having trouble compiling,
+# email:
+#
+#    overview@cs.rpi.edu
+#
+#       and describe the problem you're having. We'll get back to you as soon
+# as we can with some advice.
+#
+#    If you invoke it as ./compile clean, it will simply clean up all
+# compiled files, leaving the source in it's pristine state.
+
+JAVAC="javac -Xlint:unchecked -Xlint:deprecation"
+BCEL="overview/ovi/bcel-5.2.jar"
+P5="overview/ovp/processing-118.jar"
+PCORE="overview/ovp/core.jar"
+OPENGL="processing/opengl.jar"
+
+EXAMPLES="fibonacci spew"
+
+CLEAN="true"
+COMPILE="true"
+INSTRUMENT="true"
+
+if [[ "$1" = "clean" ]]; then
+	COMPILE=""
+	INSTRUMENT=""
+	fi
+
+if [[ $CLEAN ]]; then
+	# clean directories
+	rm -f `find . | egrep 'class(_old)?$'`
+	fi
+
+if [[ $COMPILE ]]; then
+	# compile util
+	echo "Compiling OverView Utils..."
+	$JAVAC `find overview/util | grep java$`
+
+	# compile ovi
+	echo "Compiling OVI"
+	$JAVAC -classpath .:$BCEL `find overview/ovi | grep java$`
+
+	# compile ovp
+	echo "Compiling OVP"
+	$JAVAC -classpath .:$P5:$PCORE:$OPENGL `find overview/ovp | grep java$`
+
+	# compile ovd
+	echo "Compiling OVD"
+	$JAVAC `find overview/ovd | grep java$`
+
+	# compile and instrument examples
+	echo "Compiling Examples"
+	$JAVAC `find overview/examples | grep java$`
+	fi
+
+if [[ $INSTRUMENT ]]; then
+	echo "Instrumenting Examples"
+	for i in $EXAMPLES; do
+		echo -e "\t\t$i"
+		java -cp .:$BCEL overview.ovi.OverViewInstrumenter overview/examples/$i/*.entity
+		done
+	fi
+

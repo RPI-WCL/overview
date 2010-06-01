@@ -1,0 +1,4 @@
+entity UniversalActor is salsa.language.UniversalActor {
+		when start createActor(salsa.naming.UAN arg0, salsa.naming.UAL arg1)
+			-> creation(arg0.toString(), arg1.toString());
+}

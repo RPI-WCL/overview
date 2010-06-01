@@ -1,0 +1,13 @@
+entity WWCNamingService is wwc.naming.WWCNamingService {
+	when start generateUAN (java.lang.String arg0, java.lang.String arg1)
+		-> creation (arg0, arg1);
+
+	when start generateUAL (java.lang.String arg0, java.lang.String arg1)
+		-> creation (arg0, arg1);
+
+	when start generateUAN (java.lang.String arg0)
+		-> deletion (arg0);
+
+	when start generateUAL (java.lang.String arg0)
+		-> deletion (arg0);
+}
